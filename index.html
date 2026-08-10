@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virtual Transfer Info Sessions — Planning Hub</title>
+<style>
+  :root{
+    /* University of Idaho brand: Pride Gold #F1B300 · Black #191919 · White #FFFFFF (grays = neutral shades) */
+    --bg:#F5F5F5; --surface:#FFFFFF; --surface-2:#FAFAFA;
+    --ink:#191919; --ink-2:#4A4A4A; --muted:#767676;
+    --gold:#F1B300; --gold-strong:#F1B300; --gold-tint:#FDF4D9; --gold-line:#FAE4A6;
+    --border:#E3E3E3; --border-2:#EEEEEE;
+    --header:#FFFFFF; --header-ink:#191919;
+    --radius:12px; --radius-sm:8px;
+    --shadow:0 1px 2px rgba(28,27,24,.05), 0 4px 16px rgba(28,27,24,.06);
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+  /* ---------- Header ---------- */
+  .site-header{background:var(--header);color:var(--header-ink);padding:34px 24px 30px;border-bottom:4px solid var(--gold)}
+  .header-inner{max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:18px}
+  .logo{height:64px;width:auto;flex:none}
+  .site-header h1{font-family:var(--font-display);font-size:27px;font-weight:600;letter-spacing:.2px;line-height:1.2}
+  .site-header .sub{color:#767676;font-size:13.5px;margin-top:3px;letter-spacing:.3px}
+
+  /* ---------- Nav ---------- */
+  .tabbar{position:sticky;top:0;z-index:40;background:rgba(245,245,245,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+  .tabbar-inner{max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:4px;padding:10px 24px;flex-wrap:wrap}
+  .tab{appearance:none;border:1px solid transparent;background:transparent;color:var(--ink-2);font:inherit;font-size:14px;font-weight:600;padding:7px 14px;border-radius:999px;cursor:pointer;transition:all .15s}
+  .tab:hover{color:var(--ink);background:var(--gold-tint)}
+  .tab.active{background:var(--ink);color:#F5F1E6;border-color:var(--ink)}
+  .tab-spacer{flex:1}
+  .tool-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;cursor:pointer}
+  .tool-btn:hover{border-color:var(--gold);color:var(--ink)}
+
+  /* ---------- Layout ---------- */
+  main{max-width:1060px;margin:0 auto;padding:28px 24px 80px}
+  .view{display:none}
+  .view.active{display:block;animation:fadein .18s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .section-title{font-family:var(--font-display);font-size:21px;font-weight:600;margin:26px 0 6px}
+  .section-title:first-child{margin-top:0}
+  .section-note{color:var(--ink-2);font-size:13.5px;margin-bottom:16px;max-width:70ch}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
+  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.card-grid{grid-template-columns:1fr}}
+
+  /* ---------- Badges & chips ---------- */
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+  .badge.proposed{background:#EEEEEE;color:#4A4A4A}
+  .badge.confirmed{background:var(--gold);color:#191919}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-2);color:var(--ink-2)}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none}
+  .due{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .due.ok{background:var(--surface-2);border:1px solid var(--border-2);color:var(--ink-2)}
+  .due.soon{background:var(--gold-tint);border:1px solid var(--gold-line);color:#191919}
+  .due.asap{background:#191919;color:var(--gold)}
+  .due.done{background:#EEEEEE;color:#5C5C5C}
+
+  /* ---------- Event cards (dashboard) ---------- */
+  .event-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .event-date{font-family:var(--font-display);font-size:22px;font-weight:600;line-height:1.25}
+  .event-meta{color:var(--ink-2);font-size:13.5px;margin-top:2px}
+  .countdown{font-size:13px;font-weight:700;color:#191919;background:var(--gold-tint);border:1px solid var(--gold-line);padding:4px 11px;border-radius:999px;white-space:nowrap}
+  .staff-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .progress-wrap{margin-top:16px}
+  .progress-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);font-weight:600;margin-bottom:5px}
+  .progress{height:8px;border-radius:999px;background:var(--border-2);overflow:hidden}
+  .progress>span{display:block;height:100%;border-radius:999px;background:var(--gold);transition:width .3s}
+  .alert-line{margin-top:12px;font-size:13px;font-weight:700;color:#191919;display:flex;align-items:center;gap:6px}
+
+  /* ---------- Next actions ---------- */
+  .action-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border-2)}
+  .action-row:last-child{border-bottom:none}
+  .action-row .when{flex:none;width:168px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .action-row .when .due{white-space:normal;line-height:1.35}
+  .action-row .what{flex:1;font-size:14px}
+  .action-row .ev{color:var(--muted);font-size:12.5px}
+
+  /* ---------- Checklist ---------- */
+  .ev-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .ev-toolbar label{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  input[type="date"],input[type="text"],select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px}
+  input[type="date"]:focus,input[type="text"]:focus,select:focus,textarea:focus{outline:2px solid var(--gold-line);border-color:var(--gold)}
+  .zoom-input{flex:1;min-width:200px;font-size:13px}
+  .task{display:flex;align-items:flex-start;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border-2)}
+  .task:last-child{border-bottom:none}
+  .task input[type="checkbox"]{width:19px;height:19px;margin-top:2px;accent-color:#191919;cursor:pointer;flex:none}
+  .task .t-label{flex:1;font-size:14.5px}
+  .task .t-label small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+  .task.done .t-label{color:var(--muted);text-decoration:line-through}
+  .task.done .t-label small{text-decoration:line-through}
+  .link-danger{appearance:none;background:none;border:none;color:#767676;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px}
+  .link-danger:hover{text-decoration:underline}
+  .btn{appearance:none;border:1px solid var(--ink);background:var(--ink);color:#F5F1E6;font:inherit;font-size:13.5px;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;transition:opacity .15s}
+  .btn:hover{opacity:.85}
+  .btn.secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+  .btn.secondary:hover{border-color:var(--gold);opacity:1}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:#191919}
+  .confirm-toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;user-select:none}
+  .confirm-toggle input{width:16px;height:16px;accent-color:#191919}
+
+  /* ---------- Staffing ---------- */
+  .staff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+  @media(max-width:700px){.staff-grid{grid-template-columns:1fr}}
+  .staff-slot label{display:block;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
+  .staff-slot select{width:100%}
+  /* ---------- Past sessions list ---------- */
+  .past-row{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid var(--border-2)}
+  .past-row:last-child{border-bottom:none}
+  .past-when{flex:none;width:152px}
+  .past-when strong{font-size:14px}
+  .past-when small{display:block;color:var(--muted);font-size:12px}
+  .past-info{flex:1;font-size:13.5px;color:var(--ink-2);line-height:1.45}
+  .past-info strong{color:var(--ink)}
+  .past-info a{color:var(--ink);font-weight:600}
+  .past-notes{flex:none;width:250px;font-size:13px;padding:6px 9px}
+  @media(max-width:760px){.past-row{flex-wrap:wrap}.past-notes{width:100%}}
+  .staff-slot .role-note{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}
+  .suggest-note{margin-top:12px;font-size:13px;color:var(--ink-2);background:var(--gold-tint);border:1px solid var(--gold-line);border-radius:var(--radius-sm);padding:10px 13px;display:none}
+  .suggest-note.show{display:block}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-2);padding:9px 10px;border-bottom:2px solid var(--border)}
+  td{padding:9px 10px;border-bottom:1px solid var(--border-2)}
+  tr:last-child td{border-bottom:none}
+  td.num{font-variant-numeric:tabular-nums;font-weight:600}
+
+  /* ---------- Templates ---------- */
+  .tpl-layout{display:grid;grid-template-columns:280px 1fr;gap:16px}
+  @media(max-width:820px){.tpl-layout{grid-template-columns:1fr}}
+  .tpl-list{display:flex;flex-direction:column;gap:8px}
+  .tpl-item{appearance:none;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font:inherit;cursor:pointer;transition:all .15s}
+  .tpl-item:hover{border-color:var(--gold)}
+  .tpl-item.active{border-color:var(--gold-strong);background:var(--gold-tint)}
+  .tpl-item .t-name{font-weight:700;font-size:14px}
+  .tpl-item .t-to{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .tpl-pane .subject-line{font-weight:700;font-size:14.5px;margin-bottom:10px;padding:10px 13px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:var(--radius-sm)}
+  .tpl-pane textarea{width:100%;min-height:340px;font-size:14px;line-height:1.55;resize:vertical}
+  .tpl-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  .tpl-eventpick{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .tpl-eventpick label{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+
+  /* ---------- Guide ---------- */
+  .step{display:flex;gap:15px;padding:13px 4px;border-bottom:1px solid var(--border-2)}
+  .step:last-child{border-bottom:none}
+  .step-num{flex:none;width:30px;height:30px;border-radius:50%;background:var(--gold-tint);border:1px solid var(--gold-line);color:#191919;font-weight:700;font-size:13.5px;display:flex;align-items:center;justify-content:center}
+  .step-body{font-size:14.5px}
+  .step-body small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+  .note-box{background:var(--gold-tint);border:1px solid var(--gold-line);border-radius:var(--radius-sm);padding:14px 16px;font-size:13.5px;color:var(--ink-2);margin-top:14px}
+  .note-box strong{color:var(--ink)}
+
+  /* ---------- Toast & footer ---------- */
+  #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--ink);color:#F5F1E6;font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s;z-index:99}
+  #toast.show{opacity:1;transform:translateX(-50%)}
+  footer{max-width:1060px;margin:0 auto;padding:0 24px 40px;color:var(--muted);font-size:12.5px}
+  .empty{color:var(--muted);font-size:14px;padding:14px 4px}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <img class="logo" alt="University of Idaho" src="data:image/png;base64,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">
+    <div>
+      <h1>Virtual Transfer Info Sessions</h1>
+      <div class="sub">Planning Hub &middot; University of Idaho Admissions &middot; Sessions run 12:00&ndash;1:00 pm Pacific</div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabbar">
+  <div class="tabbar-inner">
+    <button class="tab active" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="checklists">Checklists</button>
+    <button class="tab" data-view="staffing">Staffing</button>
+    <button class="tab" data-view="templates">Email Templates</button>
+    <button class="tab" data-view="past">Past Sessions</button>
+    <button class="tab" data-view="guide">Process Guide</button>
+    <span class="tab-spacer"></span>
+    <button class="tool-btn" id="btn-export" title="Download your data as a backup file">Export data</button>
+    <button class="tool-btn" id="btn-import" title="Restore from a backup file">Import</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+  </div>
+</nav>
+
+<main>
+  <section class="view active" id="view-dashboard"></section>
+  <section class="view" id="view-checklists"></section>
+  <section class="view" id="view-staffing"></section>
+  <section class="view" id="view-templates"></section>
+  <section class="view" id="view-past"></section>
+  <section class="view" id="view-guide"></section>
+</main>
+
+<footer>
+  Progress saves automatically in this browser. Use <strong>Export data</strong> for a backup or to move your plan to another computer.
+</footer>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+/* ================= Storage (safe: falls back to in-memory) ================= */
+const store = (() => {
+  try { const t='__vtis_t'; window.localStorage.setItem(t,'1'); window.localStorage.removeItem(t); return window.localStorage; }
+  catch(e){ const m={}; return { getItem:k=>(k in m?m[k]:null), setItem:(k,v)=>{m[k]=String(v);}, removeItem:k=>{delete m[k];} }; }
+})();
+const KEY = 'vtis-hub-v1';
+
+/* ================= Seed data (from the semester sheet) ================= */
+function seed(){
+  return {
+    events: [
+      { id:'ev1', date:'2026-09-15', confirmed:false, zoom:'', presenter:'', moderator:'', registrar:'Rebecca', done:{} },
+      { id:'ev2', date:'2026-11-03', confirmed:false, zoom:'', presenter:'', moderator:'', registrar:'Rebecca', done:{} }
+    ],
+    roster: [
+      { name:'Becky',    presented:5, chat:3, stage:'presenter' },
+      { name:'Mikayla',  presented:4, chat:1, stage:'presenter' },
+      { name:'Jordan',   presented:3, chat:1, stage:'presenter' },
+      { name:'Jermaine', presented:2, chat:1, stage:'presenter' },
+      { name:'Cassi',    presented:2, chat:2, stage:'presenter' },
+      { name:'Casey',    presented:2, chat:2, stage:'presenter' },
+      { name:'Alexis',   presented:2, chat:1, stage:'presenter' },
+      { name:'Nain',     presented:1, chat:4, stage:'presenter' },
+      { name:'Camille',  presented:1, chat:2, stage:'presenter' },
+      { name:'Timbrel',  presented:0, chat:0, stage:'shadowed' },
+      { name:'Fatima',   presented:0, chat:0, stage:'shadowed' }
+    ],
+    registrars: ['Rebecca','Hallie']
+  };
+}
+let state;
+try { state = JSON.parse(store.getItem(KEY)) || seed(); } catch(e){ state = seed(); }
+function save(){ state.events.sort((a,b)=>a.date<b.date?-1:1); store.setItem(KEY, JSON.stringify(state)); }
+
+/* ================= Checklist template (offset = days before session) ================= */
+const TASKS = [
+  { id:'t1',  off:60, label:'Confirm the date & time with Rebecca (Registrar’s Office)', detail:'Rebecca is the Registrar staff member who works with transfer students; Hallie can fill in.' },
+  { id:'t2',  off:58, label:'Create the Zoom meeting', detail:'Turn on the waiting room. You’ll add the counselors as alternative hosts once staffing is set.' },
+  { id:'t3',  off:55, label:'Send the date, time & Zoom link to Lindsay', detail:'She creates the Slate event and posts it to the transfer info portal.' },
+  { id:'t4',  off:45, label:'Confirm staffing for the session', detail:'Counselor 1 presents; Counselor 2 moderates chat; plus Registrar staff. Use the Staffing tab.' },
+  { id:'t5',  off:42, label:'Record staffing & set alternative hosts in Zoom', detail:'Add staffing to the semester sheet and make both counselors alternative hosts.' },
+  { id:'t6',  off:35, label:'Create the flyer & send it to all Admissions Counselors', detail:'One flyer listing every session date for the semester.' },
+  { id:'t7',  off:33, label:'Ask Amber to schedule the Slate email to prospects', detail:'The periodic email promoting the sessions to prospective transfer students.' },
+  { id:'t8',  off:14, label:'Review & update the presentation PPT', detail:'Make sure the content is accurate for the current semester.' },
+  { id:'t9',  off:7,  label:'Post the staffing reminder in the Transfer Recruitment chat', detail:'Also double-check the waiting room is on and the hosts are accurate.' },
+  { id:'t10', off:0,  label:'Run the session — 12:00–1:00 pm Pacific', detail:'' },
+  { id:'t11', off:-1, label:'Counselor 2: submit participant names for Slate check-in', detail:'Launch check-in in Slate the day after the event.' }
+];
+
+/* ================= Session history (from the current-year staffing sheet) ================= */
+const DONE_ALL = {t1:true,t2:true,t3:true,t4:true,t5:true,t6:true,t7:true,t8:true,t9:true,t10:true,t11:true};
+const HISTORY = [
+  { id:'h1', date:'2025-09-16', presenter:'Mikayla', moderator:'Nain',     registrar:'',        notes:'' },
+  { id:'h2', date:'2025-11-04', presenter:'Seneca',  moderator:'Alexis',   registrar:'',        notes:'' },
+  { id:'h3', date:'2026-01-20', presenter:'Alexis',  moderator:'Aspen',    registrar:'Rebecca', notes:'' },
+  { id:'h4', date:'2026-03-18', presenter:'Mikayla', moderator:'Camille',  registrar:'Hallie',  notes:'' },
+  { id:'h5', date:'2026-06-16', presenter:'Alexis',  moderator:'Jermaine', registrar:'Rebecca', notes:'' },
+  { id:'h6', date:'2026-07-22', presenter:'Jordan',  moderator:'Becky',    registrar:'',        notes:'Sheet listed both July 21 and July 22 for this session.' }
+];
+if (!state.seedHistory) {
+  HISTORY.forEach(h => {
+    if (!state.events.some(e => e.date === h.date)) {
+      state.events.push(Object.assign({ confirmed:true, zoom:'', inBaseline:true, done:Object.assign({}, DONE_ALL) }, h));
+    }
+  });
+  state.seedHistory = true;
+  save();
+}
+/* The sheet's frequency counts already include the archived 2025–26 sessions;
+   flag those so they aren't counted twice. Sessions held from here on add to the tallies. */
+if (!state.baselineFlagged) {
+  state.events.forEach(e => { if (/^h\d+$/.test(e.id)) e.inBaseline = true; });
+  state.baselineFlagged = true;
+  save();
+}
+
+/* ================= Date helpers ================= */
+function pd(isoStr){ const p = isoStr.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtLong(d){ return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); }
+function fmtMed(d){ return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+function fmtShort(d){ return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+function today0(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+function daysUntil(d){ return Math.round((d - today0()) / 86400000); }
+function deadline(ev, task){ return addDays(pd(ev.date), -task.off); }
+function taskStatus(ev, task){
+  if (ev.done[task.id]) return 'done';
+  const n = daysUntil(deadline(ev, task));
+  if (n < 0) return 'asap';
+  if (n <= 7) return 'soon';
+  return 'ok';
+}
+function dueChip(ev, task){
+  const d = deadline(ev, task), s = taskStatus(ev, task);
+  if (s==='done') return '<span class="due done">✓ Done</span>';
+  if (s==='asap') return '<span class="due asap">⚠ ASAP · was '+fmtShort(d)+'</span>';
+  if (s==='soon') return '<span class="due soon">⏰ '+fmtShort(d)+'</span>';
+  return '<span class="due ok">'+fmtShort(d)+'</span>';
+}
+function semesterOf(isoStr){
+  const d = pd(isoStr), m = d.getMonth()+1;
+  const term = (m>=8) ? 'Fall' : (m>=6 ? 'Summer' : 'Spring');
+  return term + ' ' + d.getFullYear();
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function upcoming(){ return state.events.filter(e => daysUntil(pd(e.date)) >= -1); }
+function past(){ return state.events.filter(e => daysUntil(pd(e.date)) < -1); }
+
+/* ================= Live team tallies ================= */
+/* Baseline counts come from the staffing sheet; every session held through this
+   system (anything in the archive that isn't part of that baseline) adds to them. */
+function liveCounts(p){
+  let presented = p.presented, chat = p.chat;
+  past().forEach(e => {
+    if (!e.inBaseline){
+      if (e.presenter === p.name) presented++;
+      if (e.moderator === p.name) chat++;
+    }
+  });
+  return { presented, chat };
+}
+function tallyMap(){ const C = {}; state.roster.forEach(p => { C[p.name] = liveCounts(p); }); return C; }
+
+/* ================= Staffing suggestions ================= */
+function suggestFor(ev){
+  const others = state.events.filter(e => e.id!==ev.id && daysUntil(pd(e.date)) >= 0);
+  const busy = n => others.some(e => e.presenter===n || e.moderator===n) ? 1 : 0;
+  const C = tallyMap();
+  const stageOf = p => (p.stage==='shadowed' && C[p.name].chat===0) ? 'shadowed' : 'active';
+
+  const presPool = state.roster.filter(p => stageOf(p)!=='shadowed')
+    .slice().sort((a,b) => (C[a.name].presented-C[b.name].presented) || (busy(a.name)-busy(b.name)) || ((C[a.name].presented+C[a.name].chat)-(C[b.name].presented+C[b.name].chat)) || (a.name<b.name?-1:1));
+  const presenter = presPool[0];
+
+  const shadowPool = state.roster.filter(p => stageOf(p)==='shadowed' && p.name!==presenter.name)
+    .slice().sort((a,b) => (busy(a.name)-busy(b.name)) || (C[a.name].chat-C[b.name].chat) || (a.name<b.name?-1:1));
+  const chatPool = state.roster.filter(p => stageOf(p)!=='shadowed' && p.name!==presenter.name)
+    .slice().sort((a,b) => (C[a.name].chat-C[b.name].chat) || (busy(a.name)-busy(b.name)) || (a.name<b.name?-1:1));
+  const moderator = shadowPool[0] || chatPool[0];
+
+  const pc = C[presenter.name].presented;
+  let reason = '<strong>' + esc(presenter.name) + '</strong> has presented ' + pc +
+    ' time' + (pc===1?'':'s') + ' — among the fewest on the team — so they’re up next to present. ';
+  if (moderator && stageOf(moderator)==='shadowed') {
+    reason += '<strong>' + esc(moderator.name) + '</strong> has shadowed and is ready to step into the chat moderator role.';
+  } else if (moderator) {
+    const mc = C[moderator.name].chat;
+    reason += '<strong>' + esc(moderator.name) + '</strong> has moderated chat ' + mc + ' time' + (mc===1?'':'s') + ' — fewest available — so they take chat.';
+  }
+  return { presenter: presenter.name, moderator: moderator ? moderator.name : '', reason: reason + ' You can change either pick below.' };
+}
+
+/* ================= Email templates ================= */
+function evLine(ev){ return fmtLong(pd(ev.date)) + ', 12:00–1:00 pm Pacific'; }
+function evLineZoom(ev){ return '  • ' + evLine(ev) + '\n    Zoom: ' + (ev.zoom || '[add Zoom link]'); }
+function bulletDates(evs){ return evs.map(e => '  • ' + evLine(e)).join('\n'); }
+const PORTAL = 'https://futurevandals.uidaho.edu/portal/transfer-info';
+
+const TEMPLATES = [
+  { id:'rebecca', name:'Date availability check', to:'Rebecca · Registrar’s Office', multi:true,
+    subject: evs => 'Virtual Transfer Info Sessions — checking dates for ' + [...new Set(evs.map(e=>semesterOf(e.date)))].join(' & '),
+    body: evs =>
+'Hi Rebecca,\n\nI hope your week is going well! I’m coordinating our Virtual Transfer Information Sessions and wanted to check dates with you before we lock anything in, since we’d love to have you join us.\n\nWe’re hoping to hold sessions on:\n\n' + bulletDates(evs) + '\n\nWould these work with your schedule? If a date doesn’t work, just let me know which days would — we’re happy to adjust. And if you’re unavailable for one, would Hallie or someone else from the Registrar’s Office be able to join?\n\nThank you!\nJermaine' },
+
+  { id:'lindsay', name:'Slate events + Zoom links', to:'Lindsay', multi:true,
+    subject: evs => 'Slate events for our upcoming Virtual Transfer Info Sessions',
+    body: evs =>
+'Hi Lindsay,\n\nOur next Virtual Transfer Information Sessions are set! Could you create the Slate events and post them to the transfer portal (' + PORTAL + ')?\n\n' + evs.map(evLineZoom).join('\n') + '\n\nLet me know if you need anything else from me.\n\nThanks so much,\nJermaine' },
+
+  { id:'amber', name:'Prospect email request', to:'Amber', multi:true,
+    subject: evs => 'Slate email to prospective transfer students — upcoming info sessions',
+    body: evs =>
+'Hi Amber,\n\nCould you schedule the periodic Slate email to prospective transfer students promoting our upcoming Virtual Transfer Info Sessions? Here are the details:\n\n' + bulletDates(evs) + '\n\nStudents can find the sessions and register here: ' + PORTAL + '\n\nThank you!\nJermaine' },
+
+  { id:'staffing', name:'Counselor staffing request', to:'All Admissions Counselors', multi:true,
+    subject: evs => 'Staffing for ' + [...new Set(evs.map(e=>semesterOf(e.date)))].join(' & ') + ' Virtual Transfer Info Sessions',
+    body: evs =>
+'Hi everyone,\n\nOur Virtual Transfer Info Sessions are scheduled for the dates below, and I’m putting staffing together. Each session needs a Counselor 1 (presenter) and a Counselor 2 (chat moderator, who also records participant names for Slate check-in):\n\n' + bulletDates(evs) + '\n\nPlease reply with the dates you’re available and whether you’d prefer to present or moderate. Once assignments are confirmed I’ll add both counselors as alternative hosts in Zoom.\n\nThanks!\nJermaine' },
+
+  { id:'reminder', name:'Week-before reminder', to:'Transfer Recruitment chat · Teams', multi:false,
+    subject: evs => '(Teams message — no subject needed)',
+    body: evs => { const ev = evs[0];
+      return 'Reminder — our Virtual Transfer Info Session is ' + fmtLong(pd(ev.date)) + ' at 12:00 pm Pacific.\n\nPresenter (Counselor 1): ' + (ev.presenter||'[presenter]') + '\nChat moderator (Counselor 2): ' + (ev.moderator||'[moderator]') + '\nRegistrar’s Office: ' + (ev.registrar||'[registrar staff]') + '\n\nI’ve double-checked that the waiting room is on and the alternative hosts are set. ' + (ev.moderator||'[moderator]') + ', a reminder to capture participant names for Slate check-in after the session.\n\nZoom link: ' + (ev.zoom||'[add Zoom link]'); } },
+
+  { id:'shadow', name:'New counselor shadow invite', to:'New Admissions Counselor', multi:false,
+    subject: evs => 'Come shadow a Virtual Transfer Info Session',
+    body: evs => { const ev = evs[0];
+      return 'Hi [name],\n\nWelcome to the team! I’d love to have you shadow our next Virtual Transfer Info Session on ' + fmtLong(pd(ev.date)) + ' at 12:00 pm Pacific so you can see how it runs. After shadowing, you’ll step into the chat moderator role, and then presenter once you’re ready.\n\nI’ll also add you to the Transfer Recruitment chat in Teams — that’s where session reminders and staffing notes go.\n\nZoom link: ' + (ev.zoom||'[add Zoom link]') + '\n\nGlad to have you aboard!\nJermaine'; } }
+];
+let tplState = { id:'rebecca', evSel:'all' };
+
+/* ================= Views ================= */
+const $ = sel => document.querySelector(sel);
+
+function staffChip(label, name){
+  return '<span class="chip"><span class="dot"></span>' + label + ': ' + (name ? '<strong>'+esc(name)+'</strong>' : '<em style="color:var(--muted)">not set</em>') + '</span>';
+}
+
+function renderDashboard(){
+  const evs = upcoming();
+  let html = '<h2 class="section-title">Upcoming sessions</h2>' +
+    '<p class="section-note">Sessions run twice a semester and twice in summer, 12:00–1:00 pm Pacific. Deadlines below are calculated from each session’s date — change a date on the Checklists tab and everything recalculates.</p>';
+
+  if (!evs.length) html += '<div class="card empty">No upcoming sessions — add one on the Checklists tab.</div>';
+
+  html += '<div class="card-grid">';
+  evs.forEach(ev => {
+    const d = pd(ev.date), n = daysUntil(d);
+    const doneCount = TASKS.filter(t=>ev.done[t.id]).length;
+    const overdue = TASKS.filter(t=>taskStatus(ev,t)==='asap').length;
+    html += '<div class="card">' +
+      '<div class="event-head"><div>' +
+        '<div class="event-date">' + fmtLong(d) + '</div>' +
+        '<div class="event-meta">12:00–1:00 pm Pacific · Zoom · ' + semesterOf(ev.date) + '</div>' +
+      '</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px">' +
+        '<span class="countdown">' + (n===0 ? 'Today!' : n===1 ? 'Tomorrow' : 'in ' + n + ' days') + '</span>' +
+        (ev.confirmed ? '<span class="badge confirmed">✓ Confirmed</span>' : '<span class="badge proposed">○ Proposed — confirm with Rebecca</span>') +
+      '</div></div>' +
+      '<div class="staff-row">' + staffChip('Presenter', ev.presenter) + staffChip('Chat', ev.moderator) + staffChip('Registrar', ev.registrar) + '</div>' +
+      '<div class="progress-wrap"><div class="progress-label"><span>Checklist progress</span><span>' + doneCount + ' / ' + TASKS.length + '</span></div>' +
+      '<div class="progress"><span style="width:' + Math.round(doneCount/TASKS.length*100) + '%"></span></div></div>' +
+      (overdue ? '<div class="alert-line">⚠ ' + overdue + ' item' + (overdue===1?'':'s') + ' overdue — see Checklists tab</div>' : '') +
+      '</div>';
+  });
+  html += '</div>';
+
+  /* Next actions */
+  const actions = [];
+  evs.forEach(ev => TASKS.forEach(t => { if (!ev.done[t.id]) actions.push({ev, t, d: deadline(ev,t)}); }));
+  actions.sort((a,b)=>a.d-b.d);
+  html += '<h2 class="section-title">Next actions</h2><div class="card">';
+  if (!actions.length) html += '<div class="empty">All caught up — nothing outstanding. ✨</div>';
+  actions.slice(0,7).forEach(a => {
+    html += '<div class="action-row"><span class="when">' + dueChip(a.ev, a.t) + '</span>' +
+      '<span class="what">' + a.t.label + '</span>' +
+      '<span class="ev">' + fmtShort(pd(a.ev.date)) + ' session</span></div>';
+  });
+  html += '</div>';
+
+  if (past().length){
+    html += '<h2 class="section-title">Past sessions</h2><div class="card">' +
+      '<div class="empty">' + past().length + ' archived session' + (past().length===1?'':'s') + ' — full details, staffing and notes are on the <strong>Past Sessions</strong> tab.</div></div>';
+  }
+  $('#view-dashboard').innerHTML = html;
+}
+
+function renderChecklists(){
+  const evs = upcoming();
+  let html = '<h2 class="section-title">Session checklists</h2>' +
+    '<p class="section-note">Each deadline is calculated from the session date. Change the date and every deadline updates automatically. Items past their date show an <span class="due asap" style="vertical-align:1px">⚠ ASAP</span> flag — with the September session on short notice, expect a few of those; just work top to bottom.</p>' +
+    '<button class="btn secondary btn-add-event" style="margin-bottom:16px">+ Add a session</button>';
+
+  evs.forEach(ev => {
+    const d = pd(ev.date);
+    const doneCount = TASKS.filter(t=>ev.done[t.id]).length;
+    html += '<div class="card" data-ev="' + ev.id + '">' +
+      '<div class="event-head"><div><div class="event-date">' + fmtLong(d) + '</div>' +
+      '<div class="event-meta">' + semesterOf(ev.date) + ' · ' + doneCount + ' of ' + TASKS.length + ' done</div></div>' +
+      (ev.confirmed ? '<span class="badge confirmed">✓ Confirmed</span>' : '<span class="badge proposed">○ Proposed</span>') + '</div>' +
+      '<div class="ev-toolbar">' +
+        '<label>Date</label><input type="date" class="ev-date" value="' + ev.date + '">' +
+        '<label class="confirm-toggle"><input type="checkbox" class="ev-confirmed"' + (ev.confirmed?' checked':'') + '> Confirmed with Rebecca</label>' +
+        '<input type="text" class="zoom-input ev-zoom" placeholder="Paste the Zoom link here…" value="' + esc(ev.zoom) + '">' +
+        '<button class="link-danger ev-delete">Remove</button>' +
+      '</div><div style="margin-top:10px">';
+    TASKS.forEach(t => {
+      html += '<div class="task' + (ev.done[t.id]?' done':'') + '"><input type="checkbox" data-task="' + t.id + '"' + (ev.done[t.id]?' checked':'') + '>' +
+        '<div class="t-label">' + t.label + (t.detail ? '<small>' + t.detail + '</small>' : '') + '</div>' + dueChip(ev, t) + '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '<button class="btn secondary btn-add-event">+ Add a session</button>';
+  $('#view-checklists').innerHTML = html;
+
+  document.querySelectorAll('#view-checklists .card[data-ev]').forEach(card => {
+    const ev = state.events.find(e => e.id === card.dataset.ev);
+    card.querySelector('.ev-date').addEventListener('change', e => { if (e.target.value){ ev.date = e.target.value; save(); render(); } });
+    card.querySelector('.ev-confirmed').addEventListener('change', e => { ev.confirmed = e.target.checked; save(); render(); });
+    card.querySelector('.ev-zoom').addEventListener('change', e => { ev.zoom = e.target.value.trim(); save(); });
+    card.querySelector('.ev-delete').addEventListener('click', () => {
+      if (confirm('Remove the ' + fmtMed(pd(ev.date)) + ' session and its checklist?')){
+        state.events = state.events.filter(e => e.id !== ev.id); save(); render();
+      }
+    });
+    card.querySelectorAll('input[data-task]').forEach(cb => cb.addEventListener('change', e => {
+      ev.done[e.target.dataset.task] = e.target.checked; save(); render();
+    }));
+  });
+  document.querySelectorAll('#view-checklists .btn-add-event').forEach(b => b.addEventListener('click', () => {
+    const last = state.events[state.events.length-1];
+    const base = last ? addDays(pd(last.date), 49) : addDays(today0(), 60);
+    const y = base.getFullYear(), m = String(base.getMonth()+1).padStart(2,'0'), dd = String(base.getDate()).padStart(2,'0');
+    state.events.push({ id:'ev'+Date.now(), date:y+'-'+m+'-'+dd, confirmed:false, zoom:'', presenter:'', moderator:'', registrar:'Rebecca', done:{} });
+    save(); render(); toast('Session added — set its date');
+  }));
+}
+
+function renderStaffing(){
+  const evs = upcoming();
+  let html = '<h2 class="section-title">Session staffing</h2>' +
+    '<p class="section-note">Counselor 1 presents. Counselor 2 backs them up, moderates the chat, records participant names for Slate check-in, and handles Zoom security. <strong>Suggest</strong> picks a fair rotation from the history below — every pick stays fully editable.</p>';
+
+  evs.forEach(ev => {
+    const opts = sel => '<option value="">— not set —</option>' + state.roster.map(p =>
+      '<option value="' + esc(p.name) + '"' + (sel===p.name?' selected':'') + '>' + esc(p.name) + (p.stage==='shadowed'?' (shadowed — ready for chat)':'') + '</option>').join('');
+    const regOpts = state.registrars.map(r => '<option' + (ev.registrar===r?' selected':'') + '>' + esc(r) + '</option>').join('');
+    html += '<div class="card" data-ev="' + ev.id + '">' +
+      '<div class="event-head"><div><div class="event-date">' + fmtLong(pd(ev.date)) + '</div>' +
+      '<div class="event-meta">12:00–1:00 pm Pacific</div></div>' +
+      '<button class="btn gold btn-suggest">✦ Suggest staffing</button></div>' +
+      '<div class="suggest-note"></div>' +
+      '<div class="staff-grid">' +
+      '<div class="staff-slot"><label>Counselor 1 · Presenter</label><select class="sel-presenter">' + opts(ev.presenter) + '</select><div class="role-note">Leads the presentation.</div></div>' +
+      '<div class="staff-slot"><label>Counselor 2 · Chat</label><select class="sel-moderator">' + opts(ev.moderator) + '</select><div class="role-note">Back-up, chat, participant check-in, Zoom security.</div></div>' +
+      '<div class="staff-slot"><label>Registrar’s Office</label><select class="sel-registrar">' + regOpts + '</select><div class="role-note">Rebecca first; Hallie as alternate.</div></div>' +
+      '</div></div>';
+  });
+
+  html += '<h2 class="section-title">Team history</h2>' +
+    '<p class="section-note">Counts start from the current-year staffing sheet and update automatically as sessions are held — the day after a session runs, its presenter and chat moderator each get credit. New counselors progress: shadow a session → chat moderator → presenter.</p>' +
+    '<div class="card"><table><thead><tr><th>Name</th><th style="text-align:right">Presented</th><th style="text-align:right">Chat</th><th>Stage</th></tr></thead><tbody>';
+  const TC = tallyMap();
+  state.roster.slice().sort((a,b)=>(TC[b.name].presented-TC[a.name].presented)||(TC[b.name].chat-TC[a.name].chat)).forEach(p => {
+    const c = TC[p.name];
+    const stillShadow = p.stage==='shadowed' && c.chat===0;
+    html += '<tr><td><strong>' + esc(p.name) + '</strong></td><td class="num" style="text-align:right">' + c.presented + '</td>' +
+      '<td class="num" style="text-align:right">' + c.chat + '</td>' +
+      '<td>' + (stillShadow ? '<span class="badge proposed" style="text-transform:none;letter-spacing:0">Shadowed — next: chat</span>' : '<span class="chip">Active</span>') + '</td></tr>';
+  });
+  html += '</tbody></table>' +
+    '<div class="ev-toolbar" style="margin-top:16px"><label>Add person</label>' +
+    '<input type="text" id="new-person" placeholder="First name only" style="width:170px">' +
+    '<select id="new-stage"><option value="shadowed">New — will shadow first</option><option value="presenter">Experienced counselor</option></select>' +
+    '<button class="btn secondary" id="btn-add-person">Add</button></div></div>' +
+    '<div class="note-box"><strong>Onboarding a new counselor:</strong> invite them to shadow a presentation first, then they become the chat moderator, then the presenter. Remember to add them to the Transfer Recruitment chat in Teams — the shadow-invite email template covers both.</div>';
+
+  $('#view-staffing').innerHTML = html;
+
+  document.querySelectorAll('#view-staffing .card[data-ev]').forEach(card => {
+    const ev = state.events.find(e => e.id === card.dataset.ev);
+    card.querySelector('.btn-suggest').addEventListener('click', () => {
+      const s = suggestFor(ev);
+      ev.presenter = s.presenter; ev.moderator = s.moderator; save();
+      card.querySelector('.sel-presenter').value = s.presenter;
+      card.querySelector('.sel-moderator').value = s.moderator;
+      const note = card.querySelector('.suggest-note');
+      note.innerHTML = s.reason; note.classList.add('show');
+    });
+    card.querySelector('.sel-presenter').addEventListener('change', e => { ev.presenter = e.target.value; save(); });
+    card.querySelector('.sel-moderator').addEventListener('change', e => { ev.moderator = e.target.value; save(); });
+    card.querySelector('.sel-registrar').addEventListener('change', e => { ev.registrar = e.target.value; save(); });
+  });
+  $('#btn-add-person').addEventListener('click', () => {
+    const inp = $('#new-person'), name = inp.value.trim();
+    if (!name) { toast('Type a first name first'); return; }
+    if (state.roster.some(p => p.name.toLowerCase() === name.toLowerCase())) { toast(name + ' is already on the roster'); return; }
+    state.roster.push({ name, presented:0, chat:0, stage: $('#new-stage').value });
+    save(); render(); toast(name + ' added to the roster');
+  });
+}
+
+function renderTemplates(){
+  const evs = upcoming();
+  const tpl = TEMPLATES.find(t => t.id === tplState.id) || TEMPLATES[0];
+  const chosen = (tplState.evSel === 'all' || !evs.length)
+    ? (evs.length ? evs : state.events)
+    : [state.events.find(e => e.id === tplState.evSel) || evs[0]];
+  const useEvs = tpl.multi ? chosen : [chosen[0]];
+
+  let html = '<h2 class="section-title">Email templates</h2>' +
+    '<p class="section-note">Dates, Zoom links and staffing fill in automatically from your sessions. Edit the text however you like, then copy it into Outlook or Teams. First names only, as requested.</p>' +
+    '<div class="tpl-layout"><div class="tpl-list">';
+  TEMPLATES.forEach(t => {
+    html += '<button class="tpl-item' + (t.id===tpl.id?' active':'') + '" data-tpl="' + t.id + '">' +
+      '<div class="t-name">' + t.name + '</div><div class="t-to">To: ' + t.to + '</div></button>';
+  });
+  html += '</div><div class="tpl-pane card" style="margin-bottom:0">';
+
+  html += '<div class="tpl-eventpick"><label>For</label><select id="tpl-ev">';
+  if (tpl.multi) html += '<option value="all"' + (tplState.evSel==='all'?' selected':'') + '>All upcoming sessions</option>';
+  upcoming().forEach(e => { html += '<option value="' + e.id + '"' + (tplState.evSel===e.id?' selected':'') + '>' + fmtMed(pd(e.date)) + '</option>'; });
+  html += '</select></div>';
+
+  const subj = tpl.subject(useEvs);
+  html += '<div class="subject-line">Subject: ' + esc(subj) + '</div>' +
+    '<textarea id="tpl-body" spellcheck="false">' + esc(tpl.body(useEvs)) + '</textarea>' +
+    '<div class="tpl-actions">' +
+    '<button class="btn" id="btn-copy-body">Copy message</button>' +
+    '<button class="btn secondary" id="btn-copy-subj">Copy subject</button>' +
+    '<a class="btn secondary" id="btn-mailto" style="text-decoration:none">Open in email</a>' +
+    '</div></div></div>';
+
+  $('#view-templates').innerHTML = html;
+
+  document.querySelectorAll('.tpl-item').forEach(b => b.addEventListener('click', () => {
+    tplState.id = b.dataset.tpl;
+    const t = TEMPLATES.find(x => x.id === tplState.id);
+    if (!t.multi && tplState.evSel === 'all') tplState.evSel = (upcoming()[0]||state.events[0]||{}).id || 'all';
+    if (t.multi) tplState.evSel = 'all';
+    renderTemplates();
+  }));
+  $('#tpl-ev').addEventListener('change', e => { tplState.evSel = e.target.value; renderTemplates(); });
+  $('#btn-copy-body').addEventListener('click', () => copyText($('#tpl-body').value, 'Message copied — paste into Outlook or Teams'));
+  $('#btn-copy-subj').addEventListener('click', () => copyText(subj, 'Subject copied'));
+  $('#btn-mailto').href = 'mailto:?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent($('#tpl-body') ? $('#tpl-body').value : tpl.body(useEvs));
+}
+
+function renderPast(){
+  const evs = past().slice().sort((a,b)=>a.date<b.date?1:-1);
+  let html = '<h2 class="section-title">Past sessions</h2>' +
+    '<p class="section-note">A read-only archive — sessions move here automatically the day after they run, with their staffing and details locked in. Use the notes box for anything worth remembering: attendance, questions, follow-ups.</p>';
+  if (!evs.length){
+    html += '<div class="card empty">No past sessions yet — they’ll appear here automatically after they run.</div>';
+    $('#view-past').innerHTML = html; return;
+  }
+  html += '<div class="card">';
+  evs.forEach(ev => {
+    html += '<div class="past-row" data-ev="' + ev.id + '">' +
+      '<div class="past-when"><strong>' + fmtMed(pd(ev.date)) + '</strong><small>' + semesterOf(ev.date) + '</small></div>' +
+      '<div class="past-info">Presenter: <strong>' + esc(ev.presenter||'—') + '</strong> · Chat: <strong>' + esc(ev.moderator||'—') + '</strong> · Registrar: <strong>' + esc(ev.registrar||'—') + '</strong>' +
+      (ev.zoom ? ' · <a href="' + esc(ev.zoom) + '" target="_blank" rel="noopener">Zoom</a>' : '') + '</div>' +
+      '<input type="text" class="past-notes" placeholder="Notes…" value="' + esc(ev.notes||'') + '">' +
+      '</div>';
+  });
+  html += '</div>';
+  $('#view-past').innerHTML = html;
+
+  document.querySelectorAll('#view-past .past-row').forEach(row => {
+    const ev = state.events.find(e => e.id === row.dataset.ev);
+    row.querySelector('.past-notes').addEventListener('change', e => { ev.notes = e.target.value; save(); toast('Note saved'); });
+  });
+}
+
+function renderGuide(){
+  const steps = [
+    ['Decide how many sessions to hold', 'Two per semester and two in summer. Aim to plan at least two months ahead so there’s time to promote.'],
+    ['Pick dates & create the Zoom meetings', 'Consult Rebecca on dates — she’s the Registrar’s staff member who works with transfer students. Sessions run 12:00–1:00 pm Pacific.'],
+    ['Send dates & Zoom links to Lindsay', 'She creates the Slate events and posts them to the transfer portal.'],
+    ['Determine staffing', 'Counselor 1 (presenter), Counselor 2 (chat moderator), and Registrar’s staff (Rebecca, or Hallie).'],
+    ['Record staffing & set Zoom hosts', 'Add assignments to the semester spreadsheet and make the counselors alternative hosts in Zoom.'],
+    ['Create the semester flyer', 'One flyer listing every session date, distributed to all Admissions Counselors.'],
+    ['Ask Amber to email prospects', 'She sends the periodic Slate email to prospective transfer students.'],
+    ['Week-before check', 'Post a staffing reminder in the Transfer Recruitment chat; verify the waiting room is on and hosts are accurate.'],
+    ['Keep the PPT current', 'Review and update the presentation each semester so it’s accurate.']
+  ];
+  let html = '<h2 class="section-title">How sessions get set up</h2>' +
+    '<p class="section-note">The full process, step by step — the Checklists tab turns these into dated to-dos for each session automatically.</p><div class="card">';
+  steps.forEach((s,i) => {
+    html += '<div class="step"><div class="step-num">' + (i+1) + '</div><div class="step-body"><strong>' + s[0] + '</strong><small>' + s[1] + '</small></div></div>';
+  });
+  html += '</div>' +
+    '<div class="note-box"><strong>New counselors:</strong> shadow a presentation first → chat moderator → presenter. Add them to the Transfer Recruitment Teams chat.</div>' +
+    '<div class="note-box"><strong>Key links & people:</strong> Sessions post at <a href="' + PORTAL + '" target="_blank" rel="noopener">the transfer info portal</a>. Rebecca (Registrar dates & attendance, Hallie as alternate) · Lindsay (Slate events) · Amber (prospect emails).</div>';
+  $('#view-guide').innerHTML = html;
+}
+
+/* ================= Shared ================= */
+function copyText(text, msg){
+  const done = () => toast(msg);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch(e){ toast('Copy failed — select the text manually'); }
+  document.body.removeChild(ta);
+}
+let toastTimer;
+function toast(msg){
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function render(){
+  renderDashboard(); renderChecklists(); renderStaffing(); renderTemplates(); renderPast(); renderGuide();
+}
+
+/* Tabs */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x===t));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + t.dataset.view));
+}));
+
+/* Export / import */
+$('#btn-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'transfer-sessions-plan.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Backup downloaded');
+});
+$('#btn-import').addEventListener('click', () => $('#import-file').click());
+$('#import-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      if (!data.events || !data.roster) throw new Error('bad');
+      state = data; save(); render(); toast('Plan restored from backup');
+    } catch(err){ toast('That file doesn’t look like a plan backup'); }
+  };
+  r.readAsText(f); e.target.value = '';
+});
+
+save();
+render();
+</script>
+</body>
+</html>
