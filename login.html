@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Virtual Transfer Info Sessions — Passcode</title>
+<style>
+  :root{
+    --bg:#F5F5F5; --surface:#FFFFFF;
+    --ink:#191919; --ink-2:#4A4A4A; --muted:#767676;
+    --gold:#F1B300; --gold-tint:#FDF4D9; --gold-line:#FAE4A6;
+    --border:#E3E3E3;
+    --radius:12px;
+    --shadow:0 1px 2px rgba(28,27,24,.05), 0 4px 16px rgba(28,27,24,.06);
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
+  .gate-card{background:var(--surface);border:1px solid var(--border);border-top:4px solid var(--gold);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:34px 32px 30px;max-width:420px;width:100%}
+  h1{font-family:var(--font-display);font-size:23px;font-weight:600;line-height:1.25;margin-bottom:6px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  p{color:var(--ink-2);font-size:14px;margin-bottom:18px}
+  input{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px}
+  input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
+  button{width:100%;appearance:none;border:none;background:var(--ink);color:#F5F1E6;font:inherit;font-size:14.5px;
+    font-weight:600;padding:11px 16px;border-radius:8px;cursor:pointer}
+  button:hover{background:#000}
+  button:disabled{opacity:.6;cursor:default}
+  #msg{margin-top:12px;font-size:13.5px;font-weight:600;color:#8A1F11;min-height:1.4em}
+</style>
+</head>
+<body>
+
+<form class="gate-card" id="gate-form">
+  <h1>Virtual Transfer Info Sessions</h1>
+  <div class="sub">Planning Hub · University of Idaho Admissions</div>
+  <p>This planning hub is passcode-protected. Enter the team passcode to open it — your saved plan will load automatically.</p>
+  <input id="gate-pass" type="password" autocomplete="current-password" placeholder="Team passcode" autofocus>
+  <button type="submit" id="gate-btn">Open the hub</button>
+  <div id="msg" role="alert"></div>
+</form>
+
+<script>
+'use strict';
+const form = document.getElementById('gate-form');
+const input = document.getElementById('gate-pass');
+const btn = document.getElementById('gate-btn');
+const msg = document.getElementById('msg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = '';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ passcode: input.value })
+    });
+    if (r.ok) { location.replace('/'); return; }
+    const j = await r.json().catch(() => ({}));
+    msg.textContent = r.status === 401
+      ? 'That passcode isn’t right — try again.'
+      : (j.error || 'Something went wrong — try again.');
+  } catch (err) {
+    msg.textContent = 'Can’t reach the server — check your connection and try again.';
+  }
+  btn.disabled = false;
+  input.select();
+});
+</script>
+</body>
+</html>
